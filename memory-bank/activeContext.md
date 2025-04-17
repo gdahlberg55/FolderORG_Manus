@@ -5,6 +5,20 @@
 ### Overview
 We are currently implementing the selective restoration capability for the Backup/Restore System. This feature allows users to choose specific files to restore rather than restoring entire transactions. The implementation is about 80% complete with the core framework in place and the selective UI components in development.
 
+### Project Organization Update
+The project has been reorganized with a more structured directory layout:
+- `docs/` - Project documentation
+  - `architecture/` - Architectural documentation
+  - `components/` - Component-specific documentation
+- `deliverables/` - Project deliverables
+  - `documentation/` - User and technical documentation
+  - `specifications/` - Project specifications
+- `testing/` - Testing documentation
+  - `plans/` - Test plans and strategies
+  - `results/` - Test results and reports
+
+Each directory includes a README.md file explaining its purpose and contents. This organization provides better separation of concerns and clearer navigation through project materials.
+
 ### Key Components in Development
 
 #### UI Components
@@ -35,6 +49,13 @@ We are currently implementing the selective restoration capability for the Backu
   - Can-execute conditions
   - Command parameter passing
   - CanExecuteChanged event notification
+
+### Recent Implementation: Project Organization
+- Created organized folder structure for project deliverables and documentation
+- Added comprehensive test plan for Backup/Restore System in `testing/plans/`
+- Created test result templates in `testing/results/`
+- Added component documentation structure in `docs/components/`
+- Updated README.md files throughout the project for better navigation
 
 ### Implementation Plan for Selective Restoration
 
