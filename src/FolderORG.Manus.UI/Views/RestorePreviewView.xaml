@@ -12,6 +12,7 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
@@ -73,13 +74,51 @@
             </materialDesign:Card>
         </Grid>
         
+        <!-- Filter Controls -->
+        <Grid Grid.Row="2" Margin="0,0,0,16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            
+            <!-- Search Box -->
+            <TextBox Grid.Column="0"
+                     Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                     materialDesign:HintAssist.Hint="Search by filename or path"
+                     Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                     Margin="0,0,16,0">
+                <TextBox.InputBindings>
+                    <KeyBinding Key="Enter" Command="{Binding ApplyFilterCommand}"/>
+                </TextBox.InputBindings>
+                <TextBox.LeadingIcon>
+                    <materialDesign:PackIcon Kind="Search" />
+                </TextBox.LeadingIcon>
+            </TextBox>
+            
+            <!-- File Type Filter -->
+            <ComboBox Grid.Column="1"
+                      ItemsSource="{Binding FileTypes}"
+                      SelectedItem="{Binding SelectedFileType}"
+                      Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                      MinWidth="150"
+                      Margin="0,0,16,0"
+                      materialDesign:HintAssist.Hint="File Type" />
+            
+            <!-- Filter Results Display -->
+            <TextBlock Grid.Column="2"
+                       Text="{Binding FilteredFileCount, StringFormat='{}{0} file(s) shown'}"
+                       Style="{StaticResource MaterialDesignSubtitle2TextBlock}"
+                       VerticalAlignment="Center" />
+        </Grid>
+        
         <!-- Files List with Tabs -->
-        <materialDesign:Card Grid.Row="2" Margin="0,0,0,16">
+        <materialDesign:Card Grid.Row="3" Margin="0,0,0,16">
             <materialDesign:ColorZone Mode="Standard">
                 <TabControl>
                     <!-- Files Tab -->
                     <TabItem Header="Files to Restore">
-                        <DataGrid ItemsSource="{Binding FilesToRestore}"
+                        <DataGrid ItemsSource="{Binding FilteredFilesToRestore}"
                                   AutoGenerateColumns="False"
                                   CanUserAddRows="False"
                                   CanUserDeleteRows="False"
@@ -137,7 +176,7 @@
         </materialDesign:Card>
         
         <!-- Status Message -->
-        <TextBlock Grid.Row="3" 
+        <TextBlock Grid.Row="4" 
                    Text="{Binding StatusMessage}" 
                    Style="{StaticResource MaterialDesignCaptionTextBlock}"
                    Foreground="{DynamicResource PrimaryHueMidBrush}"
@@ -145,7 +184,7 @@
                    Visibility="{Binding HasStatusMessage, Converter={StaticResource BooleanToVisibilityConverter}}"/>
         
         <!-- Action Buttons -->
-        <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right">
+        <StackPanel Grid.Row="5" Orientation="Horizontal" HorizontalAlignment="Right">
             <Button Content="Cancel" 
                     Command="{Binding CancelCommand}"
                     Style="{StaticResource MaterialDesignOutlinedButton}"

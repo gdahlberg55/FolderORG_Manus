@@ -83,7 +83,12 @@ namespace FolderORG.Manus.Infrastructure.DependencyInjection
             Directory.CreateDirectory(baseDirectory);
             
             // Register Restore Point Service
-            // This will be implemented next
+            services.AddSingleton<IRestorePointService>(provider =>
+            {
+                var fileTransactionService = provider.GetRequiredService<IFileTransactionService>();
+                var logger = provider.GetRequiredService<ILogger<RestorePointService>>();
+                return new RestorePointService(baseDirectory, fileTransactionService, logger);
+            });
             
             return services;
         }

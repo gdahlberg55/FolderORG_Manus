@@ -117,12 +117,14 @@ namespace FolderORG.Manus.Core.Interfaces
         /// </summary>
         /// <param name="restorePointId">ID of the restore point to restore from.</param>
         /// <param name="selectedFilePaths">Collection of file paths to restore. If null or empty, all files will be restored.</param>
+        /// <param name="options">Configuration options for the restore operation.</param>
         /// <param name="cancellationToken">Token for cancellation.</param>
         /// <param name="progress">Callback for reporting progress (0-100).</param>
         /// <returns>Result of the selective restoration process.</returns>
         Task<RestoreResult> RestoreSelectedFilesAsync(
             Guid restorePointId,
             IEnumerable<string> selectedFilePaths,
+            RestoreOptions options,
             CancellationToken cancellationToken = default,
             IProgress<(int ProgressPercentage, string StatusMessage)>? progress = null);
     }
@@ -443,5 +445,41 @@ namespace FolderORG.Manus.Core.Interfaces
         /// Recommended resolution option.
         /// </summary>
         public string RecommendedResolution { get; set; } = string.Empty;
+    }
+
+    /// <summary>
+    /// Configuration options for restore operations.
+    /// </summary>
+    public class RestoreOptions
+    {
+        /// <summary>
+        /// Gets or sets a value indicating whether to use parallel processing.
+        /// </summary>
+        public bool UseParallelProcessing { get; set; } = false;
+        
+        /// <summary>
+        /// Gets or sets the maximum degree of parallelism to use when restoring files.
+        /// </summary>
+        public int MaxDegreeOfParallelism { get; set; } = Environment.ProcessorCount;
+        
+        /// <summary>
+        /// Gets or sets the dictionary of file paths to resolution strategies for conflicts.
+        /// </summary>
+        public Dictionary<string, string> ConflictResolutions { get; set; } = new Dictionary<string, string>();
+        
+        /// <summary>
+        /// Gets or sets a value indicating whether to preserve original timestamps.
+        /// </summary>
+        public bool PreserveTimestamps { get; set; } = true;
+        
+        /// <summary>
+        /// Gets or sets a value indicating whether to create missing directories.
+        /// </summary>
+        public bool CreateMissingDirectories { get; set; } = true;
+        
+        /// <summary>
+        /// Gets or sets a value indicating whether to overwrite existing files.
+        /// </summary>
+        public bool OverwriteExisting { get; set; } = false;
     }
 } 
