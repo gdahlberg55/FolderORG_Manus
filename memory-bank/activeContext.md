@@ -1,134 +1,102 @@
-# Active Context: FolderORG Manus
+# Active Development Context
 
-## Current Focus
-The project is now in active development with focus on expanding functionality and refining core components. Current priorities include:
+## Current Focus: Backup/Restore System - Selective Restoration
 
-1. **Path Validation System**: Implementing validation for rule target paths
-2. **Backup/Restore System**: Completing rollback operations functionality
-3. **UI Enhancement**: Adding Memory Bank statistics visualization
-4. **Content-based Classification**: Improving accuracy with enhanced classifiers
-5. **Performance Optimization**: Addressing bottlenecks for large file collections
+### Overview
+We are currently implementing the selective restoration capability for the Backup/Restore System. This feature allows users to choose specific files to restore rather than restoring entire transactions. The implementation is about 80% complete with the core framework in place and the selective UI components in development.
 
-## Recent Changes
-- Established project structure and repository
-- Completed initial architecture design
-- Created documentation structure
-- Implemented basic file scanning functionality
-- Added metadata extraction for common file types
-- Setup CI/CD pipeline for development builds
-- **Completed project structure organization**
-- **Designed update mechanism**
-- **Performed comprehensive solution validation**
-- **Completed all items on the development checklist**
-- **Implemented core classification engine with multiple classifiers**
-- **Developed file operations management system**
-- **Created Memory Bank system for tracking organization history**
-- **Built Material Design-based UI with file scanning and organization capabilities**
-- **Implemented extension, size, and date-based classification**
-- **Completed Rules Engine implementation with condition evaluation and action execution**
-- **Created JSON-based rule repository for rule storage and retrieval**
-- **Implemented rule conflict resolution strategy**
-- **Developed rule templates for common organization scenarios**
-- **Created fluent builder API for rule construction**
-- **Added comprehensive validation for file operations**
-- **Enhanced metadata extraction for specialized file formats**
-- **Optimized scanning performance for large directories**
+### Key Components in Development
 
-## Next Steps
-1. Complete path validation for rule target paths
-2. Implement backup and restore functionality with UI
-3. Enhance the UI with statistics visualization from the Memory Bank
-4. Add content-based classification for improved accuracy
-5. Develop automated testing for core components
-6. Create UI components for rule creation and management
-7. Add batch processing improvements for performance optimization
+#### UI Components
+- **RestorePointSelectionView**: Complete - Allows users to browse and select restore points
+- **RestorePointSelectionViewModel**: Complete - Provides data and commands for the selection view
+- **RestorePreviewView**: 80% Complete - Shows preview of files to be restored
+- **RestorePreviewViewModel**: 80% Complete - Adding selection tracking and commands
+- **SelectableFilePreview**: 80% Complete - Enhancing with selection state
+- **SelectableConflict**: Complete - Model for conflict resolution
 
-## Active Decisions and Considerations
+#### Domain Services
+- **IRestorePointService**: 90% Complete - Adding partial restore methods
+- **RestorePointService**: 80% Complete - Implementing partial restore functionality
+- **IFileTransactionService**: Complete - Interface for transaction management
+- **JsonFileTransactionService**: Complete - Implementation with JSON storage
 
-### Project Structure
-- Organized solution using clean architecture principles
-- Created feature-based organization for project components
-- Established clear interfaces between system layers
-- Defined key component relationships and dependencies
-- **Implemented Memory Bank system with JSON storage for persistence**
-- **Used dependency injection for service registration and management**
-- **Applied repository pattern for rule storage**
-- **Optimized file system operations for large directories**
+#### Infrastructure
+- **FileOperationTransaction**: Complete - Model for tracking transaction details
+- **RestorePoint**: Complete - Model with comprehensive metadata
+- **TransactionStorage**: Complete - Persistence mechanism for transactions
+- **SnapshotManager**: Complete - Handles state snapshots
 
-### Performance Optimization
-- Implemented parallel processing for file scanning
-- Using JSON for metadata storage with memory caching for improved performance
-- Evaluating file system watcher implementation for real-time organization
-- **Added batch processing capability for file operations**
-- **Implemented thread synchronization for rule repository access**
-- **Improved memory usage during large file operations**
-- **Added optimization for repetitive path resolution**
+### Recent Implementation: MVVM Infrastructure
+- Added **RelayCommand** and **RelayCommand<T>** classes to support the MVVM pattern
+- Implemented in `src/FolderORG.Manus.UI/Commands/RelayCommand.cs`
+- Provides command binding for view models with support for:
+  - Execution logic via delegates
+  - Can-execute conditions
+  - Command parameter passing
+  - CanExecuteChanged event notification
 
-### UI/UX Design
-- Implemented modern WPF styling with Material Design
-- Created dashboard approach for system status visibility
-- Developed intuitive file organization workflow
-- **Added progress reporting for lengthy operations**
-- **Implemented file filtering and search functionality**
-- **Planning rule creation/editing UI components**
-- **Created responsive layouts for different screen sizes**
+### Implementation Plan for Selective Restoration
 
-### Rules Engine System
-- Implemented comprehensive condition-based rule system
-- Created flexible action framework for file operations
-- Developed conflict resolution strategies for rule application
-- Used JSON serialization for rule persistence
-- Implemented templating system for common organization patterns
-- Created fluent builder API for improved developer experience
-- **Optimized rule evaluation for large rule sets**
+#### Week 4: Complete Selective Restoration
+1. Enhance RestorePreviewView with selection UI
+   - Add checkboxes for individual items
+   - Implement select all/none functionality
+   - Create file type filtering
+   
+2. Update RestorePreviewViewModel
+   - Add selection tracking properties
+   - Implement filtering commands
+   - Create commands for partial restore
+   
+3. Modify RestorePointService
+   - Implement partial restore methods
+   - Add transaction support for selective operations
+   - Create target path customization
 
-### Memory Bank System
-- Using JSON-based storage for tracking organization history
-- Implemented statistics generation for organization insights
-- Created service interfaces for flexibility in storage implementation
-- Designed data models for comprehensive metadata retention
-- Added export/import functionality for backup purposes
-- **Enhanced thread safety for concurrent operations**
-- **Improved performance with optimized storage format**
+#### Week 5: Testing and Refinement
+1. Add unit tests for selective restoration
+2. Create integration tests for the entire restoration flow
+3. Perform manual testing with various scenarios
+4. Optimize performance for large restore operations
 
-## Key Patterns and Preferences
+#### Week 6: UI Enhancements
+1. Add visual progress indicators
+2. Implement file difference visualization
+3. Enhance conflict resolution dialog
+4. Add detailed restore history
 
-### Code Organization
-- Feature-based folder structure
-- Interface-first development approach
-- Heavy use of extension methods for utility functions
-- Separation of concerns between UI, business logic, and file operations
-- **Repository pattern for data access**
-- **Command pattern for file operations**
-- **Strategy pattern for rule condition evaluation**
-- **Observer pattern for progress reporting**
+### Integration Points
+- The Backup/Restore System interfaces with:
+  - **File Operation Service**: For executing file system operations
+  - **Memory Bank**: For tracking operation history
+  - **Path Validation System**: For validating target paths
 
-### Naming Conventions
-- PascalCase for public classes and methods
-- camelCase for private/internal fields
-- Descriptive, verbose naming preferred over brevity
-- "I" prefix for interfaces, "Service" suffix for service classes
-- **"Manager" suffix for coordination classes**
-- **"Result" suffix for operation return objects**
-- **"Builder" suffix for fluent API classes**
-- **"Factory" suffix for creation classes**
+### Code Structure and Patterns
+- Following Clean Architecture principles
+- Using MVVM pattern for UI components
+- Implementing Repository pattern for data access
+- Using Strategy pattern for different restore operations
+- Applying Memento pattern for transaction state management
 
 ### Testing Strategy
-- Unit tests for all business logic
-- Integration tests for file system operations
-- UI automation tests for critical user flows
-- Test data generation with realistic file samples
-- **Mock services for testing complex interactions**
-- **Parameterized tests for condition evaluation**
-- **Snapshot testing for UI components**
+- Unit tests for services and view models
+- Integration tests for end-to-end restore operations
+- Manual testing for UI components
+- Performance testing for large restore operations
 
-## Project Insights
-- File metadata extraction is more complex than anticipated due to variety of formats
-- Rule expression complexity requires careful balance between power and usability
-- Safety mechanisms need thorough testing to prevent data loss scenarios
-- Performance will be critical for user satisfaction with large file collections
-- Memory Bank system provides valuable insights into organization patterns
-- UI responsiveness during file operations requires careful threading management
-- JSON serialization performance is sufficient for current needs
-- Path resolution in rule target paths requires standardized approach to variables
-- Rule templates significantly improve user experience for common scenarios 
+## Next Development Focus
+After completing the Backup/Restore System, the next focus will be:
+
+1. **UI Statistics Enhancement**:
+   - Implementing visualization dashboard
+   - Adding Memory Bank data filtering
+   - Creating export functionality
+
+2. **Performance Optimization**:
+   - Completing large batch processing improvements
+   - Enhancing rule evaluation for large rule sets
+
+3. **Content-based Classification**:
+   - Enhancing ML.NET integration
+   - Implementing content pattern matching 

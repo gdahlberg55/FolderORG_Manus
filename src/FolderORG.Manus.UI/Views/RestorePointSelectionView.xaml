@@ -1,0 +1,150 @@
+<UserControl x:Class="FolderORG.Manus.UI.Views.RestorePointSelectionView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:local="clr-namespace:FolderORG.Manus.UI.Views"
+             mc:Ignorable="d" 
+             d:DesignHeight="600" d:DesignWidth="800">
+    
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        
+        <!-- Header -->
+        <TextBlock Grid.Row="0" Text="Restore Points" 
+                   Style="{StaticResource MaterialDesignHeadline5TextBlock}" 
+                   Margin="0,0,0,16"/>
+        
+        <!-- Filters and Search -->
+        <Grid Grid.Row="1" Margin="0,0,0,16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            
+            <!-- Search Box -->
+            <TextBox Grid.Column="0" 
+                     Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                     materialDesign:HintAssist.Hint="Search restore points"
+                     Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                     Margin="0,0,16,0"/>
+            
+            <!-- Date Range Selection -->
+            <DatePicker Grid.Column="1" 
+                        SelectedDate="{Binding StartDate}"
+                        materialDesign:HintAssist.Hint="Start date"
+                        Style="{StaticResource MaterialDesignOutlinedDatePicker}"
+                        Margin="0,0,16,0"/>
+            
+            <DatePicker Grid.Column="2" 
+                        SelectedDate="{Binding EndDate}"
+                        materialDesign:HintAssist.Hint="End date"
+                        Style="{StaticResource MaterialDesignOutlinedDatePicker}"/>
+        </Grid>
+        
+        <!-- Restore Points Data Grid -->
+        <DataGrid Grid.Row="2" 
+                  ItemsSource="{Binding RestorePoints}"
+                  SelectedItem="{Binding SelectedRestorePoint}"
+                  AutoGenerateColumns="False"
+                  CanUserAddRows="False"
+                  CanUserDeleteRows="False"
+                  IsReadOnly="True"
+                  Margin="0,0,0,16"
+                  Style="{StaticResource MaterialDesignDataGrid}">
+            
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="*"/>
+                <DataGridTextColumn Header="Created" Binding="{Binding CreationTime, StringFormat={}{0:yyyy-MM-dd HH:mm}}" Width="Auto"/>
+                <DataGridTextColumn Header="Type" Binding="{Binding Type}" Width="Auto"/>
+                <DataGridTextColumn Header="Files" Binding="{Binding FileCount}" Width="Auto"/>
+                <DataGridTextColumn Header="Size" Binding="{Binding Size, Converter={StaticResource FileSizeConverter}}" Width="Auto"/>
+                <DataGridTemplateColumn Header="Status" Width="Auto">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding Status}" Foreground="{Binding Status, Converter={StaticResource StatusColorConverter}}"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+            </DataGrid.Columns>
+        </DataGrid>
+        
+        <!-- Details Panel -->
+        <Expander Grid.Row="3" 
+                  Header="Restore Point Details" 
+                  IsExpanded="{Binding IsDetailsExpanded}"
+                  Margin="0,0,0,16">
+            <Grid Margin="16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                
+                <!-- Labels -->
+                <TextBlock Grid.Row="0" Grid.Column="0" Text="ID:" FontWeight="Bold" Margin="0,0,16,8"/>
+                <TextBlock Grid.Row="1" Grid.Column="0" Text="Description:" FontWeight="Bold" Margin="0,0,16,8"/>
+                <TextBlock Grid.Row="2" Grid.Column="0" Text="Created by:" FontWeight="Bold" Margin="0,0,16,8"/>
+                <TextBlock Grid.Row="3" Grid.Column="0" Text="Includes file backups:" FontWeight="Bold" Margin="0,0,16,8"/>
+                <TextBlock Grid.Row="4" Grid.Column="0" Text="Snapshot path:" FontWeight="Bold" Margin="0,0,16,8"/>
+                <TextBlock Grid.Row="5" Grid.Column="0" Text="Tags:" FontWeight="Bold" Margin="0,0,16,8"/>
+                <TextBlock Grid.Row="6" Grid.Column="0" Text="Associated transaction:" FontWeight="Bold" Margin="0,0,16,8"/>
+                
+                <!-- Values -->
+                <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding SelectedRestorePoint.Id}" TextWrapping="Wrap" Margin="0,0,0,8"/>
+                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding SelectedRestorePoint.Description}" TextWrapping="Wrap" Margin="0,0,0,8"/>
+                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding SelectedRestorePoint.CreatedBy}" TextWrapping="Wrap" Margin="0,0,0,8"/>
+                <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding SelectedRestorePoint.IncludesFileBackups}" TextWrapping="Wrap" Margin="0,0,0,8"/>
+                <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding SelectedRestorePoint.SnapshotPath}" TextWrapping="Wrap" Margin="0,0,0,8"/>
+                <ItemsControl Grid.Row="5" Grid.Column="1" ItemsSource="{Binding SelectedRestorePoint.Tags}" Margin="0,0,0,8">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <materialDesign:Chip Content="{Binding}" Margin="0,0,8,8"/>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding SelectedRestorePoint.TransactionId}" TextWrapping="Wrap" Margin="0,0,0,8"/>
+            </Grid>
+        </Expander>
+        
+        <!-- Action Buttons -->
+        <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button Content="Refresh" 
+                    Command="{Binding RefreshCommand}"
+                    Style="{StaticResource MaterialDesignOutlinedButton}"
+                    Margin="0,0,16,0"/>
+            
+            <Button Content="Preview Restore" 
+                    Command="{Binding PreviewRestoreCommand}"
+                    Style="{StaticResource MaterialDesignOutlinedButton}"
+                    Margin="0,0,16,0"/>
+            
+            <Button Content="Restore" 
+                    Command="{Binding RestoreCommand}"
+                    IsEnabled="{Binding CanRestore}"
+                    Style="{StaticResource MaterialDesignRaisedButton}"
+                    Background="{DynamicResource PrimaryHueMidBrush}"/>
+        </StackPanel>
+    </Grid>
+</UserControl> 

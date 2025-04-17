@@ -1,5 +1,7 @@
 using FolderORG.Manus.Core.Models;
+using FolderORG.Manus.Core.Interfaces;
 using System.IO;
+using System.Threading;
 
 namespace FolderORG.Manus.Application.Services
 {
@@ -8,6 +10,17 @@ namespace FolderORG.Manus.Application.Services
     /// </summary>
     public class FileOperationService
     {
+        private readonly IFileTransactionService? _fileTransactionService;
+
+        /// <summary>
+        /// Initializes a new instance of the FileOperationService.
+        /// </summary>
+        /// <param name="fileTransactionService">Optional transaction service for transactional operations.</param>
+        public FileOperationService(IFileTransactionService? fileTransactionService = null)
+        {
+            _fileTransactionService = fileTransactionService;
+        }
+
         /// <summary>
         /// Result of a file operation.
         /// </summary>
@@ -37,6 +50,11 @@ namespace FolderORG.Manus.Application.Services
             /// The type of operation performed.
             /// </summary>
             public FileOperationType OperationType { get; set; }
+
+            /// <summary>
+            /// Associated transaction ID if the operation was part of a transaction.
+            /// </summary>
+            public Guid? TransactionId { get; set; }
         }
 
         /// <summary>
@@ -186,6 +204,176 @@ namespace FolderORG.Manus.Application.Services
             }
 
             return operationResults;
+        }
+
+        /// <summary>
+        /// Batch processes multiple files with transaction support for rollback capability.
+        /// </summary>
+        /// <param name="results">The classification results containing file metadata.</param>
+        /// <param name="targetRootFolder">The root folder where files will be organized.</param>
+        /// <param name="operationType">The type of operation to perform (Move or Copy).</param>
+        /// <param name="transactionName">Name of the transaction for identification.</param>
+        /// <param name="createMissingFolders">Whether to create missing folders in the target path.</param>
+        /// <param name="createBackups">Whether to create backups for potential rollback.</param>
+        /// <param name="cancellationToken">Token for cancellation.</param>
+        /// <param name="progress">Callback for reporting progress (0-100).</param>
+        /// <returns>A collection of results and the transaction ID for potential rollback.</returns>
+        public async Task<(IEnumerable<FileOperationResult> Results, Guid TransactionId)> BatchProcessFilesWithTransactionAsync(
+            IEnumerable<ClassificationResult> results,
+            string targetRootFolder,
+            FileOperationType operationType,
+            string transactionName,
+            bool createMissingFolders = true,
+            bool createBackups = true,
+            CancellationToken cancellationToken = default,
+            IProgress<(int ProgressPercentage, string StatusMessage)>? progress = null)
+        {
+            if (_fileTransactionService == null)
+                throw new InvalidOperationException("Transaction service is not available. Please initialize the FileOperationService with an IFileTransactionService implementation.");
+
+            var resultsList = results.ToList();
+            int totalFiles = resultsList.Count;
+            
+            // Create a new transaction
+            var transaction = await _fileTransactionService.CreateTransactionAsync(
+                transactionName,
+                $"Batch {operationType} operation for {totalFiles} files to {targetRootFolder}",
+                TransactionType.Manual);
+            
+            var operationResults = new List<FileOperationResult>();
+            int processedCount = 0;
+            
+            try
+            {
+                // Plan all operations and add them to the transaction
+                foreach (var result in resultsList)
+                {
+                    if (cancellationToken.IsCancellationRequested)
+                        break;
+                    
+                    // Determine the target folder
+                    string targetFolder = targetRootFolder;
+                    
+                    if (!string.IsNullOrEmpty(result.SuggestedPath))
+                    {
+                        targetFolder = Path.Combine(targetRootFolder, result.SuggestedPath);
+                    }
+                    
+                    // Ensure target directory exists or can be created
+                    if (!Directory.Exists(targetFolder))
+                    {
+                        if (!createMissingFolders)
+                        {
+                            // Skip this file and continue with others
+                            var skipResult = new FileOperationResult
+                            {
+                                SourcePath = result.FileMetadata.FullPath,
+                                OperationType = operationType,
+                                Success = false,
+                                ErrorMessage = $"Target directory does not exist: {targetFolder}",
+                                TransactionId = transaction.Id
+                            };
+                            operationResults.Add(skipResult);
+                            continue;
+                        }
+                    }
+                    
+                    // Generate a unique destination path
+                    string fileName = Path.GetFileName(result.FileMetadata.FullPath);
+                    string destinationPath = Path.Combine(targetFolder, fileName);
+                    
+                    if (File.Exists(destinationPath))
+                    {
+                        string extension = Path.GetExtension(fileName);
+                        string nameWithoutExtension = Path.GetFileNameWithoutExtension(fileName);
+                        string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+                        destinationPath = Path.Combine(targetFolder, $"{nameWithoutExtension}_{timestamp}{extension}");
+                    }
+                    
+                    // Add the operation to the transaction
+                    await _fileTransactionService.AddOperationAsync(
+                        transaction.Id,
+                        result.FileMetadata.FullPath,
+                        destinationPath,
+                        operationType.ToString());
+                    
+                    // Update progress
+                    processedCount++;
+                    progress?.Report((
+                        (int)((double)processedCount / totalFiles * 50), // Use first 50% for planning
+                        $"Planning operation for {fileName}"
+                    ));
+                }
+                
+                // Execute the transaction
+                if (!cancellationToken.IsCancellationRequested)
+                {
+                    var executedTransaction = await _fileTransactionService.ExecuteTransactionAsync(
+                        transaction.Id,
+                        createBackups,
+                        cancellationToken,
+                        new Progress<(int ProgressPercentage, string StatusMessage)>(progressUpdate =>
+                        {
+                            // Transform progress from 0-100 to 50-100 (second half of operation)
+                            int adjustedProgress = 50 + (progressUpdate.ProgressPercentage / 2);
+                            progress?.Report((adjustedProgress, progressUpdate.StatusMessage));
+                        }));
+                    
+                    // Map transaction operations to operation results
+                    foreach (var operation in executedTransaction.Operations)
+                    {
+                        var operationResult = new FileOperationResult
+                        {
+                            SourcePath = operation.SourcePath,
+                            DestinationPath = operation.DestinationPath,
+                            OperationType = Enum.Parse<FileOperationType>(operation.OperationType),
+                            Success = operation.Status == OperationStatus.Completed,
+                            ErrorMessage = operation.Status != OperationStatus.Completed ? operation.ErrorMessage : null,
+                            TransactionId = executedTransaction.Id
+                        };
+                        
+                        operationResults.Add(operationResult);
+                    }
+                    
+                    return (operationResults, executedTransaction.Id);
+                }
+                else
+                {
+                    // Cancellation was requested, return partial results
+                    return (operationResults, transaction.Id);
+                }
+            }
+            catch (Exception ex)
+            {
+                // Handle transaction failure
+                // Add failure information to the results
+                operationResults.Add(new FileOperationResult
+                {
+                    Success = false,
+                    ErrorMessage = $"Transaction failed: {ex.Message}",
+                    TransactionId = transaction.Id
+                });
+                
+                return (operationResults, transaction.Id);
+            }
+        }
+        
+        /// <summary>
+        /// Rolls back a previously executed transaction.
+        /// </summary>
+        /// <param name="transactionId">ID of the transaction to roll back.</param>
+        /// <param name="cancellationToken">Token for cancellation.</param>
+        /// <param name="progress">Callback for reporting progress (0-100).</param>
+        /// <returns>True if rollback was successful; otherwise, false.</returns>
+        public async Task<bool> RollbackTransactionAsync(
+            Guid transactionId,
+            CancellationToken cancellationToken = default,
+            IProgress<(int ProgressPercentage, string StatusMessage)>? progress = null)
+        {
+            if (_fileTransactionService == null)
+                throw new InvalidOperationException("Transaction service is not available. Please initialize the FileOperationService with an IFileTransactionService implementation.");
+            
+            return await _fileTransactionService.RollbackTransactionAsync(transactionId, cancellationToken, progress);
         }
 
         /// <summary>

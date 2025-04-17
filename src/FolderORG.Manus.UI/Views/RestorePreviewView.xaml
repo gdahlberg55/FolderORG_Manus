@@ -1,0 +1,171 @@
+<UserControl x:Class="FolderORG.Manus.UI.Views.RestorePreviewView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:local="clr-namespace:FolderORG.Manus.UI.Views"
+             mc:Ignorable="d" 
+             d:DesignHeight="600" d:DesignWidth="800">
+    
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        
+        <!-- Header -->
+        <TextBlock Grid.Row="0" Text="Restore Preview" 
+                   Style="{StaticResource MaterialDesignHeadline5TextBlock}" 
+                   Margin="0,0,0,16"/>
+        
+        <!-- Summary Information -->
+        <Grid Grid.Row="1" Margin="0,0,0,16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            
+            <!-- Restore Point Info -->
+            <materialDesign:Card Grid.Column="0" Margin="0,0,8,0" Padding="8">
+                <StackPanel>
+                    <TextBlock Text="Restore Point" 
+                               Style="{StaticResource MaterialDesignCaptionTextBlock}"/>
+                    <TextBlock Text="{Binding RestorePointName}" 
+                               Style="{StaticResource MaterialDesignSubtitle1TextBlock}"
+                               TextWrapping="Wrap"/>
+                </StackPanel>
+            </materialDesign:Card>
+            
+            <!-- File Count -->
+            <materialDesign:Card Grid.Column="1" Margin="8,0,8,0" Padding="8">
+                <StackPanel>
+                    <TextBlock Text="Files to Restore" 
+                               Style="{StaticResource MaterialDesignCaptionTextBlock}"/>
+                    <TextBlock Text="{Binding FileCount}" 
+                               Style="{StaticResource MaterialDesignSubtitle1TextBlock}"/>
+                </StackPanel>
+            </materialDesign:Card>
+            
+            <!-- Total Size -->
+            <materialDesign:Card Grid.Column="2" Margin="8,0,8,0" Padding="8">
+                <StackPanel>
+                    <TextBlock Text="Total Size" 
+                               Style="{StaticResource MaterialDesignCaptionTextBlock}"/>
+                    <TextBlock Text="{Binding TotalSize, Converter={StaticResource FileSizeConverter}}" 
+                               Style="{StaticResource MaterialDesignSubtitle1TextBlock}"/>
+                </StackPanel>
+            </materialDesign:Card>
+            
+            <!-- Estimated Time -->
+            <materialDesign:Card Grid.Column="3" Margin="8,0,0,0" Padding="8">
+                <StackPanel>
+                    <TextBlock Text="Estimated Time" 
+                               Style="{StaticResource MaterialDesignCaptionTextBlock}"/>
+                    <TextBlock Text="{Binding EstimatedTime}" 
+                               Style="{StaticResource MaterialDesignSubtitle1TextBlock}"/>
+                </StackPanel>
+            </materialDesign:Card>
+        </Grid>
+        
+        <!-- Files List with Tabs -->
+        <materialDesign:Card Grid.Row="2" Margin="0,0,0,16">
+            <materialDesign:ColorZone Mode="Standard">
+                <TabControl>
+                    <!-- Files Tab -->
+                    <TabItem Header="Files to Restore">
+                        <DataGrid ItemsSource="{Binding FilesToRestore}"
+                                  AutoGenerateColumns="False"
+                                  CanUserAddRows="False"
+                                  CanUserDeleteRows="False"
+                                  IsReadOnly="True"
+                                  Style="{StaticResource MaterialDesignDataGrid}">
+                            <DataGrid.Columns>
+                                <DataGridTemplateColumn Width="Auto">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                                                      Margin="8,0,0,0"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTextColumn Header="Original Path" Binding="{Binding SourcePath}" Width="*"/>
+                                <DataGridTextColumn Header="Target Path" Binding="{Binding TargetPath}" Width="*"/>
+                                <DataGridTextColumn Header="Size" Binding="{Binding Size, Converter={StaticResource FileSizeConverter}}" Width="Auto"/>
+                                <DataGridTemplateColumn Header="Status" Width="Auto">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding Operation}" Foreground="{Binding Operation, Converter={StaticResource OperationColorConverter}}"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </TabItem>
+                    
+                    <!-- Conflicts Tab -->
+                    <TabItem Header="Conflicts">
+                        <DataGrid ItemsSource="{Binding PotentialConflicts}"
+                                  AutoGenerateColumns="False"
+                                  CanUserAddRows="False"
+                                  CanUserDeleteRows="False"
+                                  IsReadOnly="True"
+                                  Style="{StaticResource MaterialDesignDataGrid}">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="File Path" Binding="{Binding FilePath}" Width="*"/>
+                                <DataGridTextColumn Header="Conflict Type" Binding="{Binding ConflictType}" Width="Auto"/>
+                                <DataGridTextColumn Header="Description" Binding="{Binding Description}" Width="*"/>
+                                <DataGridTemplateColumn Header="Resolution" Width="Auto">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <ComboBox ItemsSource="{Binding ResolutionOptions}" 
+                                                      SelectedItem="{Binding SelectedResolution, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                      Width="150"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </TabItem>
+                </TabControl>
+            </materialDesign:ColorZone>
+        </materialDesign:Card>
+        
+        <!-- Status Message -->
+        <TextBlock Grid.Row="3" 
+                   Text="{Binding StatusMessage}" 
+                   Style="{StaticResource MaterialDesignCaptionTextBlock}"
+                   Foreground="{DynamicResource PrimaryHueMidBrush}"
+                   Margin="0,0,0,16"
+                   Visibility="{Binding HasStatusMessage, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+        
+        <!-- Action Buttons -->
+        <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button Content="Cancel" 
+                    Command="{Binding CancelCommand}"
+                    Style="{StaticResource MaterialDesignOutlinedButton}"
+                    Margin="0,0,16,0"/>
+            
+            <Button Content="Select All" 
+                    Command="{Binding SelectAllCommand}"
+                    Style="{StaticResource MaterialDesignOutlinedButton}"
+                    Margin="0,0,16,0"/>
+            
+            <Button Content="Select None" 
+                    Command="{Binding SelectNoneCommand}"
+                    Style="{StaticResource MaterialDesignOutlinedButton}"
+                    Margin="0,0,16,0"/>
+            
+            <Button Content="Restore Selected" 
+                    Command="{Binding RestoreCommand}"
+                    IsEnabled="{Binding CanRestore}"
+                    Style="{StaticResource MaterialDesignRaisedButton}"
+                    Background="{DynamicResource PrimaryHueMidBrush}"/>
+        </StackPanel>
+    </Grid>
+</UserControl> 
