@@ -52,7 +52,7 @@ namespace FolderORG.Manus.Domain.Rules.Services
                 string normalizedPath = NormalizePath(resolvedPath);
                 
                 // Validate the normalized path
-                var validationIssues = ValidatePath(normalizedPath);
+                var validationIssues = ValidatePath(normalizedPath, context);
                 
                 return new PathValidationResult
                 {
@@ -137,8 +137,114 @@ namespace FolderORG.Manus.Domain.Rules.Services
                 return string.IsNullOrEmpty(format) ? DateTime.Now.ToString("yyyy-MM-dd") : DateTime.Now.ToString(format);
             }
             
+            // File metadata tokens: file:property
+            if (variableName.StartsWith("file:", StringComparison.OrdinalIgnoreCase) && context?.FileMetadata != null)
+            {
+                return ResolveFileMetadataToken(variableName.Substring(5), context.FileMetadata);
+            }
+
+            // Expression-based computed values: expr:expression
+            if (variableName.StartsWith("expr:", StringComparison.OrdinalIgnoreCase))
+            {
+                return await EvaluateExpressionAsync(variableName.Substring(5), context);
+            }
+            
             // Failed to resolve
             return null;
+        }
+
+        /// <summary>
+        /// Resolves a file metadata token to its value.
+        /// </summary>
+        /// <param name="property">The file metadata property to retrieve.</param>
+        /// <param name="metadata">The file metadata object.</param>
+        /// <returns>The resolved value or null if resolution failed.</returns>
+        private string ResolveFileMetadataToken(string property, FileMetadata metadata)
+        {
+            if (metadata == null)
+                return null;
+
+            switch (property.ToLowerInvariant())
+            {
+                case "name":
+                    return metadata.Name;
+                case "extension":
+                    return metadata.Extension;
+                case "namewithoutext":
+                    return Path.GetFileNameWithoutExtension(metadata.Name);
+                case "creationdate":
+                    return metadata.CreationDate?.ToString("yyyy-MM-dd");
+                case "creationtime":
+                    return metadata.CreationDate?.ToString("HH-mm-ss");
+                case "modificationdate":
+                    return metadata.ModificationDate?.ToString("yyyy-MM-dd");
+                case "modificationtime":
+                    return metadata.ModificationDate?.ToString("HH-mm-ss");
+                case "size":
+                    return metadata.Size.ToString();
+                case "sizekb":
+                    return (metadata.Size / 1024).ToString();
+                case "sizemb":
+                    return (metadata.Size / (1024 * 1024)).ToString();
+                case "type":
+                    return metadata.FileType;
+                case "category":
+                    return metadata.Category;
+                case "hash":
+                    return metadata.Hash;
+                default:
+                    // Try to get a custom property
+                    if (metadata.CustomProperties != null && 
+                        metadata.CustomProperties.TryGetValue(property, out string value))
+                        return value;
+                    return null;
+            }
+        }
+
+        /// <summary>
+        /// Evaluates an expression to produce a computed value.
+        /// </summary>
+        /// <param name="expression">The expression to evaluate.</param>
+        /// <param name="context">The validation context.</param>
+        /// <returns>The result of the expression evaluation.</returns>
+        private async Task<string> EvaluateExpressionAsync(string expression, PathValidationContext context)
+        {
+            try
+            {
+                // Simple expression parsing for common operations
+                if (expression.Contains("+"))
+                {
+                    string[] parts = expression.Split('+');
+                    string result = string.Empty;
+                    
+                    foreach (var part in parts)
+                    {
+                        string trimmed = part.Trim();
+                        if (trimmed.StartsWith("${") && trimmed.EndsWith("}"))
+                        {
+                            string varName = trimmed.Substring(2, trimmed.Length - 3);
+                            string resolvedValue = await ResolveVariableAsync(varName, context);
+                            result += resolvedValue ?? string.Empty;
+                        }
+                        else
+                        {
+                            result += trimmed;
+                        }
+                    }
+                    
+                    return result;
+                }
+
+                // Additional complex expressions could be implemented here
+                
+                return null;
+            }
+            catch (Exception ex)
+            {
+                // Log the error and return null
+                // TODO: Add proper logging
+                return null;
+            }
         }
 
         /// <summary>
@@ -153,23 +259,82 @@ namespace FolderORG.Manus.Domain.Rules.Services
             
             try
             {
+                // Replace any environment variables or user profile references
+                path = Environment.ExpandEnvironmentVariables(path);
+                
+                // Handle Windows-specific path conventions
+                if (path.StartsWith("~", StringComparison.Ordinal))
+                {
+                    path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), 
+                        path.Substring(1).TrimStart('/', '\\'));
+                }
+                
+                // Convert separators to the system's preferred separator
+                path = path.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
+                
+                // Handle UNC paths correctly
+                bool isUnc = path.StartsWith(@"\\", StringComparison.Ordinal);
+                
+                // Handle long path prefix
+                bool hasLongPathPrefix = path.StartsWith(@"\\?\", StringComparison.Ordinal);
+                
                 // Convert to absolute path if it's not already
                 if (!Path.IsPathRooted(path))
                 {
-                    // If no root, assume it's relative to the current directory
-                    path = Path.Combine(Environment.CurrentDirectory, path);
+                    // If context has a base directory, use that as the base
+                    string baseDir = Environment.CurrentDirectory;
+                    path = Path.Combine(baseDir, path);
                 }
                 
                 // Use GetFullPath to normalize the path (resolves . and .. segments)
+                // This also handles redundant separators
                 string fullPath = Path.GetFullPath(path);
                 
-                // Ensure consistent directory separators
-                fullPath = fullPath.Replace('/', Path.DirectorySeparatorChar);
+                // Remove trailing separators unless it's a root directory
+                if (fullPath.Length > 3 && fullPath.EndsWith(Path.DirectorySeparatorChar))
+                {
+                    fullPath = fullPath.TrimEnd(Path.DirectorySeparatorChar);
+                }
+                
+                // Preserve UNC format if the original path was a UNC path
+                if (isUnc && !fullPath.StartsWith(@"\\", StringComparison.Ordinal))
+                {
+                    fullPath = @"\\" + fullPath.TrimStart('\\');
+                }
+                
+                // Add long path prefix for paths exceeding MAX_PATH (260 characters)
+                // if needed and if it wasn't already present
+                if (!hasLongPathPrefix && fullPath.Length >= 260 && !fullPath.StartsWith(@"\\?\", StringComparison.Ordinal))
+                {
+                    if (isUnc)
+                    {
+                        fullPath = @"\\?\UNC\" + fullPath.Substring(2);
+                    }
+                    else
+                    {
+                        fullPath = @"\\?\" + fullPath;
+                    }
+                }
+                
+                // Convert to lowercase for case-insensitive comparison (Windows)
+                // Note: This is safe for Windows but might not be for case-sensitive file systems
+                if (Environment.OSVersion.Platform == PlatformID.Win32NT)
+                {
+                    // Only lowercase the drive letter, keep the rest of the path case-sensitive
+                    if (fullPath.Length >= 2 && fullPath[1] == ':')
+                    {
+                        char driveLetter = char.ToLowerInvariant(fullPath[0]);
+                        fullPath = driveLetter + fullPath.Substring(1);
+                    }
+                }
                 
                 return fullPath;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                // Log the error
+                // TODO: Add proper logging
+                
                 // If normalization fails, return the original path
                 return path;
             }
@@ -179,8 +344,9 @@ namespace FolderORG.Manus.Domain.Rules.Services
         /// Validates a path for various issues like existence, permissions, etc.
         /// </summary>
         /// <param name="path">The path to validate.</param>
+        /// <param name="context">Optional context information for validation.</param>
         /// <returns>A list of validation issues, empty if the path is valid.</returns>
-        private List<string> ValidatePath(string path)
+        private List<string> ValidatePath(string path, PathValidationContext context = null)
         {
             var issues = new List<string>();
             
@@ -198,41 +364,129 @@ namespace FolderORG.Manus.Domain.Rules.Services
                 
                 // Check path length
                 if (path.Length > 260 && !path.StartsWith(@"\\?\"))
-                    issues.Add("Path exceeds maximum length (260 characters)");
+                    issues.Add("Path exceeds maximum length (260 characters). Consider using long path format (\\\\?\\)");
                 
-                // Check if path exists
-                bool isDirectory = Directory.Exists(path);
-                bool isFile = File.Exists(path);
-                
-                if (!isDirectory && !isFile)
+                // Check if the path should be checked for existence (default is true)
+                bool checkExistence = context?.CheckExistence ?? true;
+                if (checkExistence)
                 {
-                    // Path doesn't exist, check if parent directory exists
-                    string directory = Path.GetDirectoryName(path);
-                    if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
-                        issues.Add($"Parent directory does not exist: {directory}");
+                    // Check if path exists
+                    bool isDirectory = Directory.Exists(path);
+                    bool isFile = File.Exists(path);
+                    
+                    if (!isDirectory && !isFile)
+                    {
+                        // Path doesn't exist, check if parent directory exists
+                        string directory = Path.GetDirectoryName(path);
+                        if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+                        {
+                            issues.Add($"Parent directory does not exist: {directory}");
+                            
+                            // Check if directories should be created automatically
+                            if (context?.CreateDirectories == true)
+                            {
+                                try
+                                {
+                                    Directory.CreateDirectory(directory);
+                                    // Remove the issue if creation was successful
+                                    issues.RemoveAt(issues.Count - 1);
+                                    issues.Add($"Parent directory created: {directory}");
+                                }
+                                catch (Exception ex)
+                                {
+                                    issues.Add($"Failed to create parent directory: {ex.Message}");
+                                }
+                            }
+                        }
+                    }
+                    
+                    // Check for permissions only if the path exists and permission checking is enabled
+                    bool validatePermissions = context?.ValidatePermissions ?? true;
+                    if (validatePermissions && (isDirectory || isFile))
+                    {
+                        if (isDirectory)
+                        {
+                            try
+                            {
+                                // Check read permissions by attempting to list files
+                                Directory.GetFiles(path, "*", SearchOption.TopDirectoryOnly);
+                                
+                                // Check write permissions by attempting to create a temporary file
+                                string tempFile = Path.Combine(path, $"temp_{Guid.NewGuid()}.tmp");
+                                using (File.Create(tempFile)) { }
+                                File.Delete(tempFile);
+                            }
+                            catch (UnauthorizedAccessException)
+                            {
+                                issues.Add("Insufficient permissions to access directory");
+                            }
+                            catch (IOException ex)
+                            {
+                                issues.Add($"I/O error checking directory permissions: {ex.Message}");
+                            }
+                        }
+                        else if (isFile)
+                        {
+                            try
+                            {
+                                // Check read permissions
+                                using (File.OpenRead(path)) { }
+                                
+                                // Check write permissions
+                                if (!File.GetAttributes(path).HasFlag(FileAttributes.ReadOnly))
+                                {
+                                    FileAttributes originalAttributes = File.GetAttributes(path);
+                                    try
+                                    {
+                                        // Try to open for writing
+                                        using (File.OpenWrite(path)) { }
+                                    }
+                                    finally
+                                    {
+                                        // Restore original attributes
+                                        File.SetAttributes(path, originalAttributes);
+                                    }
+                                }
+                                else
+                                {
+                                    issues.Add("File is read-only, cannot be modified");
+                                }
+                            }
+                            catch (UnauthorizedAccessException)
+                            {
+                                issues.Add("Insufficient permissions to access file");
+                            }
+                            catch (IOException ex)
+                            {
+                                issues.Add($"I/O error checking file permissions: {ex.Message}");
+                            }
+                        }
+                    }
                 }
-                
-                // Check for permissions (just attempt to access for read)
-                if (isDirectory)
+
+                // Check for potential issues with directory nesting
+                if (path.Length > 50 && Directory.Exists(path)) 
                 {
-                    try
+                    string[] pathSegments = path.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+                    if (pathSegments.Length > 15)
                     {
-                        Directory.GetFiles(path, "*", SearchOption.TopDirectoryOnly);
+                        issues.Add("Path has excessive directory nesting (> 15 levels), which may cause issues on some systems");
                     }
-                    catch (UnauthorizedAccessException)
+
+                    // Check for redundancy in path segments
+                    var uniqueSegments = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                    int redundantSegments = 0;
+                    foreach (var segment in pathSegments)
                     {
-                        issues.Add("Insufficient permissions to access directory");
+                        if (!string.IsNullOrWhiteSpace(segment) && !uniqueSegments.Add(segment))
+                        {
+                            redundantSegments++;
+                        }
                     }
-                }
-                else if (isFile)
-                {
-                    try
+                    
+                    if (redundantSegments > 3)
                     {
-                        using (File.OpenRead(path)) { }
-                    }
-                    catch (UnauthorizedAccessException)
-                    {
-                        issues.Add("Insufficient permissions to access file");
+                        issues.Add($"Path contains {redundantSegments} redundant named segments, consider simplifying");
                     }
                 }
             }

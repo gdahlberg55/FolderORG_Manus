@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+
 namespace FolderORG.Manus.Core.Models
 {
     /// <summary>
@@ -13,7 +16,7 @@ namespace FolderORG.Manus.Core.Models
         /// <summary>
         /// File name with extension
         /// </summary>
-        public string FileName { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
 
         /// <summary>
         /// File extension (with the dot)
@@ -33,22 +36,37 @@ namespace FolderORG.Manus.Core.Models
         /// <summary>
         /// Date when the file was created
         /// </summary>
-        public DateTime CreationTime { get; set; }
+        public DateTime? CreationDate { get; set; }
 
         /// <summary>
         /// Date when the file was last accessed
         /// </summary>
-        public DateTime LastAccessTime { get; set; }
+        public DateTime? LastAccessDate { get; set; }
 
         /// <summary>
         /// Date when the file was last modified
         /// </summary>
-        public DateTime LastWriteTime { get; set; }
+        public DateTime? ModificationDate { get; set; }
 
         /// <summary>
         /// Content type (MIME type) of the file, if available
         /// </summary>
-        public string? ContentType { get; set; }
+        public string ContentType { get; set; }
+
+        /// <summary>
+        /// The classified file type (e.g., Document, Image, Video)
+        /// </summary>
+        public string FileType { get; set; }
+
+        /// <summary>
+        /// The category assigned to the file by the classification engine
+        /// </summary>
+        public string Category { get; set; }
+
+        /// <summary>
+        /// Hash value of the file content, typically SHA-256
+        /// </summary>
+        public string Hash { get; set; }
 
         /// <summary>
         /// Indicates whether the file is read-only
@@ -69,5 +87,10 @@ namespace FolderORG.Manus.Core.Models
         /// Collection of additional properties extracted from specific file types
         /// </summary>
         public Dictionary<string, object> ExtendedProperties { get; set; } = new Dictionary<string, object>();
+
+        /// <summary>
+        /// Collection of custom properties that can be assigned by the user or rules
+        /// </summary>
+        public Dictionary<string, string> CustomProperties { get; set; } = new Dictionary<string, string>();
     }
 } 
