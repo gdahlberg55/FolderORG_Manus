@@ -1,0 +1,234 @@
+<Window x:Class="FolderORG.Manus.UI.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        xmlns:local="clr-namespace:FolderORG.Manus.UI"
+        mc:Ignorable="d"
+        Title="FolderORG Manus - File Organizer" 
+        Height="720" Width="1280"
+        TextElement.Foreground="{DynamicResource MaterialDesignBody}"
+        TextElement.FontWeight="Regular"
+        TextElement.FontSize="13"
+        TextOptions.TextFormattingMode="Ideal"
+        TextOptions.TextRenderingMode="Auto"
+        Background="{DynamicResource MaterialDesignPaper}"
+        FontFamily="{materialDesign:MaterialDesignFont}">
+    
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- App Bar -->
+        <materialDesign:ColorZone Padding="16" materialDesign:ShadowAssist.ShadowDepth="Depth2"
+                                  Mode="PrimaryMid" Grid.Row="0">
+            <DockPanel>
+                <materialDesign:PopupBox DockPanel.Dock="Right" PlacementMode="BottomAndAlignRightEdges">
+                    <ListBox>
+                        <ListBoxItem Content="Settings"/>
+                        <ListBoxItem Content="About"/>
+                        <Separator/>
+                        <ListBoxItem Content="Exit" Click="ExitApplication_Click"/>
+                    </ListBox>
+                </materialDesign:PopupBox>
+                <StackPanel Orientation="Horizontal">
+                    <materialDesign:PackIcon Kind="FolderMultipleOutline" Height="32" Width="32" VerticalAlignment="Center"/>
+                    <TextBlock VerticalAlignment="Center" Margin="16,0,0,0" FontSize="22">FolderORG Manus</TextBlock>
+                </StackPanel>
+            </DockPanel>
+        </materialDesign:ColorZone>
+        
+        <!-- Main Content -->
+        <Grid Grid.Row="1" Margin="16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="360"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            
+            <!-- Left Panel - Source & Options -->
+            <Grid Grid.Column="0" Margin="0,0,16,0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                
+                <!-- Source Folder Selection -->
+                <materialDesign:Card Grid.Row="0" Margin="0,0,0,16" Padding="16">
+                    <StackPanel>
+                        <TextBlock Text="Source Folder" Style="{StaticResource MaterialDesignHeadline6TextBlock}"
+                                   Margin="0,0,0,8"/>
+                        <DockPanel Margin="0,8,0,0">
+                            <Button DockPanel.Dock="Right" Margin="8,0,0,0" Style="{StaticResource MaterialDesignFlatButton}"
+                                    ToolTip="Browse for folder" Click="BrowseSourceFolder_Click">
+                                <materialDesign:PackIcon Kind="FolderOpen" />
+                            </Button>
+                            <TextBox x:Name="SourceFolderTextBox" materialDesign:HintAssist.Hint="Select a source folder" />
+                        </DockPanel>
+                        <CheckBox x:Name="IncludeSubfoldersCheckBox" Content="Include subfolders" 
+                                  Margin="0,16,0,0" IsChecked="True"/>
+                    </StackPanel>
+                </materialDesign:Card>
+                
+                <!-- Target Folder Selection -->
+                <materialDesign:Card Grid.Row="1" Margin="0,0,0,16" Padding="16">
+                    <StackPanel>
+                        <TextBlock Text="Target Folder" Style="{StaticResource MaterialDesignHeadline6TextBlock}"
+                                   Margin="0,0,0,8"/>
+                        <DockPanel Margin="0,8,0,0">
+                            <Button DockPanel.Dock="Right" Margin="8,0,0,0" Style="{StaticResource MaterialDesignFlatButton}"
+                                    ToolTip="Browse for folder" Click="BrowseTargetFolder_Click">
+                                <materialDesign:PackIcon Kind="FolderOpen" />
+                            </Button>
+                            <TextBox x:Name="TargetFolderTextBox" materialDesign:HintAssist.Hint="Select a target folder" />
+                        </DockPanel>
+                        <CheckBox x:Name="CreateMissingFoldersCheckBox" Content="Create missing folders" 
+                                  Margin="0,16,0,0" IsChecked="True"/>
+                    </StackPanel>
+                </materialDesign:Card>
+                
+                <!-- Classification Options -->
+                <materialDesign:Card Grid.Row="2" Margin="0,0,0,16" Padding="16">
+                    <StackPanel>
+                        <TextBlock Text="Classification Options" Style="{StaticResource MaterialDesignHeadline6TextBlock}"
+                                   Margin="0,0,0,8"/>
+                        
+                        <TextBlock Text="Organization Method" Style="{StaticResource MaterialDesignSubtitle1TextBlock}"
+                                   Margin="0,8,0,4"/>
+                        <ComboBox x:Name="OrganizationMethodComboBox" 
+                                  materialDesign:HintAssist.Hint="Select organization method"
+                                  Margin="0,0,0,16" SelectionChanged="OrganizationMethod_SelectionChanged">
+                            <ComboBoxItem Content="By File Type" IsSelected="True"/>
+                            <ComboBoxItem Content="By Date"/>
+                            <ComboBoxItem Content="By Size"/>
+                            <ComboBoxItem Content="Custom Rules"/>
+                        </ComboBox>
+                        
+                        <TextBlock Text="File Operations" Style="{StaticResource MaterialDesignSubtitle1TextBlock}"
+                                   Margin="0,8,0,4"/>
+                        <RadioButton x:Name="MoveFilesRadioButton" GroupName="FileOperation" 
+                                     Content="Move files" IsChecked="True" Margin="0,4,0,0"/>
+                        <RadioButton x:Name="CopyFilesRadioButton" GroupName="FileOperation" 
+                                     Content="Copy files" Margin="0,4,0,0"/>
+                    </StackPanel>
+                </materialDesign:Card>
+                
+                <!-- Action Buttons -->
+                <materialDesign:Card Grid.Row="3" VerticalAlignment="Top" Margin="0,0,0,0" Padding="16">
+                    <StackPanel>
+                        <Button x:Name="ScanFilesButton" Content="SCAN FILES" Margin="0,0,0,8"
+                                Style="{StaticResource MaterialDesignOutlinedButton}"
+                                Click="ScanFiles_Click"/>
+                        <Button x:Name="OrganizeFilesButton" Content="ORGANIZE FILES" Margin="0,8,0,0"
+                                Style="{StaticResource MaterialDesignRaisedButton}"
+                                Click="OrganizeFiles_Click" IsEnabled="False"/>
+                    </StackPanel>
+                </materialDesign:Card>
+            </Grid>
+            
+            <!-- Right Panel - File List & Preview -->
+            <Grid Grid.Column="1">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                
+                <!-- Results Tabs -->
+                <materialDesign:Card Grid.Row="0">
+                    <TabControl x:Name="ResultsTabControl" Style="{StaticResource MaterialDesignTabControl}">
+                        <!-- Files Tab -->
+                        <TabItem Header="Files">
+                            <Grid Margin="8">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+                                
+                                <!-- Search & Filter -->
+                                <DockPanel Grid.Row="0" Margin="0,0,0,8">
+                                    <Button DockPanel.Dock="Right" Margin="8,0,0,0" 
+                                            Style="{StaticResource MaterialDesignFlatButton}">
+                                        <materialDesign:PackIcon Kind="FilterVariant" />
+                                    </Button>
+                                    <TextBox x:Name="SearchTextBox" materialDesign:HintAssist.Hint="Search files"
+                                             TextChanged="SearchTextBox_TextChanged"/>
+                                </DockPanel>
+                                
+                                <!-- File List -->
+                                <DataGrid x:Name="FilesDataGrid" AutoGenerateColumns="False" Grid.Row="1"
+                                          CanUserAddRows="False" CanUserDeleteRows="False" 
+                                          IsReadOnly="True" SelectionChanged="FilesDataGrid_SelectionChanged">
+                                    <DataGrid.Columns>
+                                        <DataGridCheckBoxColumn Header="Select" Binding="{Binding IsSelected}"/>
+                                        <DataGridTemplateColumn Header="Type" Width="40">
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <materialDesign:PackIcon Kind="{Binding FileIcon}" Width="24" Height="24"/>
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                        </DataGridTemplateColumn>
+                                        <DataGridTextColumn Header="Name" Binding="{Binding FileName}" Width="*"/>
+                                        <DataGridTextColumn Header="Size" Binding="{Binding FormattedSize}" Width="80"/>
+                                        <DataGridTextColumn Header="Date" Binding="{Binding FormattedDate}" Width="100"/>
+                                        <DataGridTextColumn Header="Category" Binding="{Binding Category}" Width="100"/>
+                                        <DataGridTextColumn Header="Target" Binding="{Binding TargetPath}" Width="180"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </Grid>
+                        </TabItem>
+                        
+                        <!-- Statistics Tab -->
+                        <TabItem Header="Statistics">
+                            <Grid Margin="8">
+                                <!-- Statistics Content - To be implemented -->
+                                <TextBlock Text="Statistics will be shown here after scanning files."
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                                           Style="{StaticResource MaterialDesignHeadline6TextBlock}"
+                                           TextWrapping="Wrap" TextAlignment="Center"/>
+                            </Grid>
+                        </TabItem>
+                        
+                        <!-- Log Tab -->
+                        <TabItem Header="Log">
+                            <Grid Margin="8">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                
+                                <TextBox x:Name="LogTextBox" Grid.Row="0" 
+                                         Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                         IsReadOnly="True" TextWrapping="Wrap" 
+                                         VerticalScrollBarVisibility="Auto"
+                                         materialDesign:HintAssist.Hint="Operation logs will appear here"/>
+                                
+                                <Button Grid.Row="1" Content="CLEAR LOG" HorizontalAlignment="Right" 
+                                        Margin="0,8,0,0" Style="{StaticResource MaterialDesignOutlinedButton}"
+                                        Click="ClearLog_Click"/>
+                            </Grid>
+                        </TabItem>
+                    </TabControl>
+                </materialDesign:Card>
+                
+                <!-- Status Bar -->
+                <DockPanel Grid.Row="1" Margin="0,8,0,0">
+                    <ProgressBar x:Name="OperationProgressBar" DockPanel.Dock="Right" Width="200" Margin="16,0,0,0"/>
+                    <TextBlock x:Name="StatusTextBlock" Padding="8" Text="Ready"/>
+                </DockPanel>
+            </Grid>
+        </Grid>
+        
+        <!-- Footer -->
+        <materialDesign:ColorZone Grid.Row="2" Mode="PrimaryLight" Padding="8">
+            <DockPanel>
+                <TextBlock DockPanel.Dock="Right" Text="Version 1.0.0" Padding="8,0,0,0"/>
+                <TextBlock Text="© 2023 FolderORG Manus - Intelligent File Organization"/>
+            </DockPanel>
+        </materialDesign:ColorZone>
+    </Grid>
+</Window> 
