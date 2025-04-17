@@ -8,6 +8,14 @@ FolderORG Manus is an intelligent file organization system that automatically ca
 
 The current implementation focus is on completing the selective restoration capability of the Backup/Restore System. This feature allows users to choose specific files to restore rather than restoring entire transactions.
 
+## Recent Project Cleanup
+The project has undergone a significant file organization cleanup:
+- Removed duplicate documentation files from the root directory
+- Moved architecture documentation to `docs/architecture/`
+- Moved component documentation to `docs/components/`
+- Improved navigation with a cleaner root directory
+- Maintained the same content while eliminating redundancy
+
 ## Project Organization
 The project follows a clean architecture approach with clear separation of concerns:
 
@@ -81,6 +89,7 @@ Implements condition-based rule system with action framework, JSON-based storage
 Tracks operation history, provides statistics, and maintains metadata for performed file operations.
 
 ## Recent Implementation
+- Completed file cleanup for better organization and navigation
 - Added **RelayCommand** and **RelayCommand<T>** classes to support the MVVM pattern
 - Created structured directory layout for improved project organization
 - Added comprehensive test plan for Backup/Restore System
@@ -115,4 +124,5 @@ Tracks operation history, provides statistics, and maintains metadata for perfor
 - Memory Bank system with JSON storage for tracking history
 - Path Validation System with variable resolution and permission checking
 - MVVM pattern with RelayCommand implementation
-- Structured project organization with dedicated documentation directories 
+- Structured project organization with dedicated documentation directories
+- Removal of duplicate files to maintain clean structure and better navigation 

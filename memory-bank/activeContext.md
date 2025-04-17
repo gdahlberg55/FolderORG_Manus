@@ -5,6 +5,14 @@
 ### Overview
 We are currently implementing the selective restoration capability for the Backup/Restore System. This feature allows users to choose specific files to restore rather than restoring entire transactions. The implementation is about 80% complete with the core framework in place and the selective UI components in development.
 
+### Recent Project Cleanup
+Completed a significant file organization cleanup:
+- Removed duplicate documentation files from the root directory
+- Ensured all architectural documentation is properly located in `docs/architecture/`
+- Ensured all component documentation is properly located in `docs/components/`
+- Eliminated redundancy while preserving content in organized locations
+- Improved project navigation with cleaner root directory structure
+
 ### Project Organization Update
 The project has been reorganized with a more structured directory layout:
 - `docs/` - Project documentation
@@ -51,6 +59,7 @@ Each directory includes a README.md file explaining its purpose and contents. Th
   - CanExecuteChanged event notification
 
 ### Recent Implementation: Project Organization
+- Completed file organization cleanup removing duplicate documentation from root
 - Created organized folder structure for project deliverables and documentation
 - Added comprehensive test plan for Backup/Restore System in `testing/plans/`
 - Created test result templates in `testing/results/`
